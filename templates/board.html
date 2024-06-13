@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>게시판</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link href='https://unpkg.com/fullcalendar@5.9.0/main.min.css' rel='stylesheet' />
+
+    <style>
+        /* 전체 페이지 스타일 */
+        body {
+            padding-top: 5rem;
+            font-family: 'Roboto', sans-serif;
+            background-color: #f8f9fa;
+            background: #e9ecef;
+            margin: 0;
+            padding: 0;
+        }
+
+        .custom-button {
+        background-color: #008CBA; /* Blue */
+        border: none;
+        color: white;
+        padding: 10px 20px;
+        text-align: center;
+        text-decoration: none;
+        font-size: 16px;
+        cursor: pointer;
+    }
+
+        .button-container {
+            display: grid;
+            /* Grid Layout으로 설정 */
+            grid-template-columns: 1fr auto;
+            /* 첫 번째 열은 남은 공간을 차지하고, 두 번째 열은 버튼 크기에 맞춤 */
+            gap: 10px;
+            /* 버튼 사이의 간격 설정 */
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: #343a40;
+        }
+
+        /* 게시판 테이블 스타일 */
+        .table {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .table th,
+        .table td {
+            vertical-align: middle;
+        }
+
+        .table th {
+            background-color: #f8f9fa;
+            border-top: none;
+        }
+
+        .table td {
+            border-top: none;
+        }
+
+        /* 페이지네이션 스타일 */
+        .pagination {
+            justify-content: center;
+            margin-top: 2rem;
+        }
+
+        .page-link {
+            color: #007bff;
+        }
+
+        .page-link:hover {
+            color: #0056b3;
+        }
+
+        .page-item.active .page-link {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+
+        /* 글쓰기 버튼 스타일 */
+        #writePost {
+            margin-top: 2rem;
+            width: 100%;
+            max-width: 200px;
+        }
+
+        /* 모달 내부 스타일 */
+        .modal-content {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-header {
+            background-color: #007bff;
+            color: #fff;
+            border-bottom: none;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+
+        .modal-title {
+            font-weight: bold;
+        }
+
+        .modal-body {
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+
+        .modal-body p {
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-footer {
+            border-top: none;
+            justify-content: flex-end;
+        }
+
+        /* 버튼 스타일 */
+        .btn {
+            border-radius: 8px;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+            border-color: #0056b3;
+        }
+
+        .btn-secondary {
+            color: #fff;
+            background-color: #6c757d;
+            border-color: #6c757d;
+        }
+
+        .btn-secondary:hover {
+            background-color: #545b62;
+            border-color: #4e555b;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            border-color: #dc3545;
+        }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+            border-color: #bd2130;
+        }
+
+        .btn-warning {
+            background-color: #ffc107;
+            border-color: #ffc107;
+        }
+
+        .btn-warning:hover {
+            background-color: #e0a800;
+            border-color: #d39e00;
+        }
+
+        /* 삭제 버튼 너비 조정 */
+        .delete-btn {
+            width: 100%;
+        }
+
+        /* 반응형 디자인 */
+        @media (max-width: 576px) {
+            .container {
+                padding: 0 1rem;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            #writePost {
+                max-width: none;
+            }
+        }
+
+
+
+        #calendar-container {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            width: 400px;
+            height: 450px;
+            z-index: 1000;
+            border: 1px solid #ccc;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background-color: #fff;
+            overflow: hidden;
+        }
+
+        #calendar {
+            width: 100%;
+            height: 100%;
+            font-size: 0.8em;
+        }
+
+        .fc-button {
+            font-size: 0.8em;
+        }
+
+        #noteModal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1001;
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border: 1px solid #ccc;
+            width: 300px;
+            height: 300px;
+        }
+
+        #noteModal textarea {
+            width: 100%;
+            height: 200px;
+        }
+
+        #noteModal button {
+            margin-top: 10px;
+        }
+
+        #memoListModal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1001;
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border: 1px solid #ccc;
+            width: 400px;
+            height: 400px;
+            overflow-y: scroll;
+        }
+
+        #memoListModal ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        #memoListModal li {
+            margin: 5px 0;
+        }
+
+        .header {
+            background: #28a745;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .username {
+            font-size: 18px;
+        }
+
+        .logout-link {
+            text-decoration: none;
+            color: white;
+            font-size: 14px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            background-color: #6c757d;
+        }
+
+        .logout-link:hover {
+            background-color: #5a6268;
+        }
+
+        .content {
+            padding: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <h1 style="color:#fff">Welcome, <span class="username" style="color:#fff">{{username}}</span>!</h1>
+        <a href="/login/logout" class="logout-link">로그아웃</a>
+    </div>
+
+    <div>
+        <div id="calendar-container">
+            <div id='calendar'></div>
+        </div>
+        <div id="noteModal">
+            <h3>메모 입력</h3>
+            <form id="noteForm" method="post">
+                <input type="hidden" id="noteDate" name="date">
+                <input type="hidden" id="noteId" name="id">
+                <textarea id="noteContent" name="title"></textarea>
+                <br>
+                <button type="submit" id="saveNote">저장</button>
+                <button type="button" id="cancelNote">취소</button>
+                <button type="button" id="deleteNote">삭제</button>
+            </form>
+        </div>
+        <div id="memoListModal">
+            <h3>모든 메모</h3>
+            <ul id="memoList"></ul>
+            <button type="button" id="closeMemoList">닫기</button>
+        </div>
+    </div>
+
+
+    <div class="container">
+        <h1>게시판</h1>
+        <table id="board" class="table">
+            <div class="button-container">
+                {% if request.endpoint == 'filtered_board' %}
+                    <button class="custom-button custom-button-green"
+                            onclick="window.location.href='{{ url_for('board') }}'">
+                        전체 글 보기
+                    </button>
+                {% else %}
+                    <button class="custom-button"
+                            onclick="window.location.href='{{ url_for('filtered_board') }}'">
+                        내가 쓴 글 보기
+                    </button>
+                {% endif %}
+            </div>
+            <thead>
+                <tr>
+                    <th>제목</th>
+                    <th>글쓴이</th>
+                    <th>작성일</th>
+                    <th>작성시간</th>
+                    <th>조회수</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for post in posts.items %}
+                <tr>
+                    <td>
+                        <a href="#" class="post-title" data-bs-toggle="modal" data-bs-target="#viewPostModal"
+                            data-id="{{ post.id }}">{{ post.title }}</a>
+                    </td>
+                    <td>{{ post.author }}</td>
+                    <td>{{ post.date.strftime('%Y-%m-%d') }}</td>
+                    <td>{{ post.time.strftime('%H:%M:%S') }}</td>
+                    <td>{{ post.views }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center">
+                {% if posts.has_prev %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('board', page=posts.prev_num) }}" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+                {% for page_num in posts.iter_pages() %}
+                {% if page_num %}
+                {% if page_num == posts.page %}
+                <li class="page-item active">
+                    <span class="page-link">{{ page_num }}</span>
+                </li>
+                {% else %}
+                <li class="page-item"><a class="page-link" href="{{ url_for('board', page=page_num) }}">{{ page_num
+                        }}</a></li>
+                {% endif %}
+                {% else %}
+                <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
+                {% endfor %}
+                {% if posts.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('board', page=posts.next_num) }}" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        <button id="writePost" class="btn btn-primary" data-bs-toggle="modal"
+            data-bs-target="#exampleModal">글쓰기</button>
+    </div>
+
+    <!-- 글 작성 모달 -->
+    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">글 작성</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="{{ url_for('create_post') }}" method="post">
+                        <div class="mb-3">
+                            <label for="title" class="form-label">제목</label>
+                            <input type="text" class="form-control" id="title" name="title" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="content" class="form-label">내용</label>
+                            <textarea class="form-control" id="content" rows="3" name="content"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">작성 완료</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 게시글 보기 모달 -->
+    <div class="modal fade" id="viewPostModal" tabindex="-1" aria-labelledby="viewPostModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewPostModalLabel"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <b>
+                        <p id="viewPostAuthor"></p>
+                    </b>
+                    <b>
+                        <p id="viewPostDateTime"></p>
+                    </b>
+                    <div id="viewPostContent" style="min-height: 200px;"></div>
+
+                    <div class="d-flex justify-content-between mt-3">
+                        <button id="editPost" class="btn btn-warning">수정</button>
+                        <button id="deletePost" type="button" class="btn btn-danger ms-2 delete-post">삭제</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 글 수정 모달 -->
+    <div class="modal fade" id="editPostModal" tabindex="-1" aria-labelledby="editPostModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editPostModalLabel">게시글 수정</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="editPostForm" action="" method="post">
+                        <div class="mb-3">
+                            <label for="editTitle" class="form-label">제목</label>
+                            <input type="text" class="form-control" id="editTitle" name="title">
+                        </div>
+                        <div class="mb-3">
+                            <label for="editContent" class="form-label">내용</label>
+                            <textarea class="form-control" id="editContent" rows="5" name="content"></textarea>
+                        </div>
+                        <input type="hidden" id="editPostId" name="post_id">
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
+                    <button type="submit" form="editPostForm" class="btn btn-primary">수정 완료</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const postTitles = document.querySelectorAll('.post-title');
+
+            postTitles.forEach(title => {
+                title.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    const postId = this.getAttribute('data-id');
+
+                    // 조회수 증가 요청
+                    fetch(`/board/view/${postId}`, { method: 'POST' })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                console.log('조회수가 증가했습니다:', data.new_view_count);
+                            } else {
+                                console.error('조회수 증가 실패');
+                            }
+                        })
+                        .catch(error => console.error('Error:', error));
+
+                    // 게시글 내용 조회 및 모달 표시
+                    fetch(`/board/${postId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            document.getElementById('viewPostModalLabel').textContent = data.title;
+                            document.getElementById('viewPostAuthor').textContent = '글쓴이: ' + data.author;
+                            document.getElementById('viewPostDateTime').textContent = '작성일: ' + data.date + ' ' + data.time;
+                            document.getElementById('viewPostContent').textContent = data.content;
+
+                            // 모달 열기
+                            var viewPostModal = new bootstrap.Modal(document.getElementById('viewPostModal'));
+                            viewPostModal.show();
+
+                            // 삭제 버튼에 게시글 ID 설정
+                            const deleteButton = document.getElementById('deletePost');
+                            deleteButton.setAttribute('data-id', data.id);
+
+                            // 수정 버튼에 게시글 ID 설정
+                            const editButton = document.getElementById('editPost');
+                            editButton.setAttribute('data-id', data.id);
+
+                            // 현재 사용자와 작성자가 같을 때만 수정/삭제 버튼 활성화
+                            if (data.current_user === data.author) {
+                                deleteButton.style.display = 'block';
+                                editButton.style.display = 'block';
+                            } else {
+                                deleteButton.style.display = 'none';
+                                editButton.style.display = 'none';
+                            }
+                        })
+                        .catch(error => console.error('Error:', error));
+                });
+            });
+
+            // 수정 버튼 클릭 시
+            document.getElementById("editPost").addEventListener("click", function () {
+                const postId = this.getAttribute('data-id');
+                fetch(`/board/${postId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        document.getElementById('editTitle').value = data.title;
+                        document.getElementById('editContent').value = data.content;
+                        document.getElementById('editPostForm').setAttribute('action', `/board/edit/${postId}`);
+                        var editPostModal = new bootstrap.Modal(document.getElementById('editPostModal'));
+                        editPostModal.show();
+                    });
+            });
+
+            // 삭제 버튼 클릭 시
+            document.getElementById("deletePost").addEventListener("click", function () {
+                const postId = this.getAttribute('data-id');
+                if (confirm('정말로 이 게시글을 삭제하시겠습니까?')) {
+                    fetch(`/board/delete/${postId}`, {
+                        method: 'DELETE'
+                    })
+                        .then(response => {
+                            if (response.ok) {
+                                alert('게시글이 삭제되었습니다.');
+                                window.location.reload();
+                            } else {
+                                alert('게시글 삭제에 실패했습니다.');
+                            }
+                        });
+                }
+            });
+
+            // 모달이 닫힐 때 오버레이 제거
+            var viewPostModalElement = document.getElementById('viewPostModal');
+            viewPostModalElement.addEventListener('hidden.bs.modal', function () {
+                document.querySelector('.modal-backdrop').remove();
+            });
+        });
+    </script>
+
+    <script src="https://unpkg.com/fullcalendar@5.9.0/main.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var calendarEl = document.getElementById('calendar');
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'dayGridMonth',
+                headerToolbar: {
+                    left: 'title',
+                    center: '',
+                    right: 'prev,next today viewMemos'
+                },
+                customButtons: {
+                    viewMemos: {
+                        text: '메모 조회',
+                        click: function () {
+                            $.ajax({
+                                url: '/calendar/memos',
+                                method: 'GET',
+                                success: function (data) {
+                                    var memoList = $('#memoList');
+                                    memoList.empty();
+                                    data.sort(function (a, b) {
+                                        return new Date(a.start) - new Date(b.start);
+                                    });
+                                    data.forEach(function (memo) {
+                                        memoList.append('<li>' + memo.start + ' - ' + memo.title + '</li>');
+                                    });
+                                    $('#memoListModal').show();
+                                }
+                            });
+                        }
+                    }
+                },
+                events: '/calendar/memos',
+                height: '100%',
+                contentHeight: 'auto',
+                dayMaxEventRows: true,
+                views: {
+                    dayGridMonth: {
+                        dayMaxEventRows: 2
+                    }
+                },
+                dateClick: function (info) {
+                    // 날짜 클릭 시 모달 초기화
+                    $('#noteModal').show();
+                    $('#noteDate').val(info.dateStr);
+                    $('#noteId').val('');
+                    $('#noteContent').val('');
+                },
+                eventClick: function (info) {
+                    // 이벤트 클릭 시 메모 로드
+                    $('#noteModal').show();
+                    $('#noteId').val(info.event.id);
+                    $('#noteDate').val(info.event.startStr);
+                    $('#noteContent').val(info.event.title);
+                }
+            });
+            calendar.render();
+
+            $('#cancelNote').on('click', function () {
+                $('#noteModal').hide();
+                $('#noteContent').val('');
+                $('#noteId').val('');
+                $('#noteDate').val('');
+            });
+
+            $('#deleteNote').on('click', function () {
+                var id = $('#noteId').val();
+                $.ajax({
+                    url: '/calendar/delete_memo',
+                    method: 'DELETE',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ id: id }),
+                    success: function () {
+                        calendar.refetchEvents();
+                        $('#noteModal').hide();
+                        $('#noteContent').val('');
+                        $('#noteId').val('');
+                        $('#noteDate').val('');
+                    }
+                });
+            });
+
+            $('#noteForm').on('submit', function (e) {
+                e.preventDefault();
+                var id = $('#noteId').val();
+                var url = id ? '/calendar/update_memo' : '/calendar/add_memo';
+                var method = id ? 'PUT' : 'POST';
+                $.ajax({
+                    url: url,
+                    method: method,
+                    data: $('#noteForm').serialize(),
+                    success: function () {
+                        calendar.refetchEvents();
+                        $('#noteModal').hide();
+                        $('#noteContent').val('');
+                        $('#noteId').val('');
+                        $('#noteDate').val('');
+                    }
+                });
+            });
+
+            $('#closeMemoList').on('click', function () {
+                $('#memoListModal').hide();
+            });
+        });
+
+    </script>
+</body>
+
+</html>
