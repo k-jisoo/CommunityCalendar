@@ -1,4 +1,7 @@
 # CommunityCalendar
+파이썬과 html, css, js로 구현하여 pythonanywhere에 배포한 프로젝트
+
+
 ## 개발한 기능 및 설명
 
 ### 회원 가입 및 로그인 기능 - 권기용
